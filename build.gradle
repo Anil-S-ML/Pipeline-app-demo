@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'net.logstash.logback:logstash-logback-encoder:5.2'
+    implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     testImplementation 'junit:junit:4.12'
 }
