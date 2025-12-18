@@ -41,8 +41,8 @@ publishing {
             url "http://135.235.216.220:8081/repository/maven-snapshots/"
             allowInsecureProtocol = true
             credentials {
-                username = project.repoUser
-                password = project.repoPassword
+                username = findProperty('repoUser') ?: ''
+                password = findProperty('repoPassword') ?: ''
             }
         }
     }
