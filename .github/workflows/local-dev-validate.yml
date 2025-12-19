@@ -46,26 +46,26 @@ jobs:
 
           echo "✅ Branch name format is valid: $SOURCE_BRANCH"
 
-      - name: Validate PR title format
-        if: steps.check_sync.outputs.is_sync != 'true'
-        run: |
-          PR_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr '[:upper:]' '[:lower:]')
-          SOURCE_BRANCH=$(echo "${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
+            - name: Validate PR title format
+          if: steps.check_sync.outputs.is_sync != 'true'
+          run: |
+            PR_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr '[:upper:]' '[:lower:]')
+            SOURCE_BRANCH=$(echo "${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
 
-          BRANCH_PREFIX="${SOURCE_BRANCH%%/*}"
+            BRANCH_PREFIX="${SOURCE_BRANCH%%/*}"
 
-          # Allow:
-          # prefix/AC-123
-          # prefix/AC-123 description
-          # prefix/AC-123-description
-          if [[ ! "$PR_TITLE" =~ ^${BRANCH_PREFIX}/ac-[0-9]+([[:space:]-].*)?$ ]]; then
-            echo "❌ Invalid PR title: $PR_TITLE"
-            echo "Expected formats:"
-            echo "  ${BRANCH_PREFIX}/AC-123"
-            echo "  ${BRANCH_PREFIX}/AC-123 description"
-            echo "  ${BRANCH_PREFIX}/AC-123-description"
-            exit 1
-          fi
+            # Escape regex special characters in branch prefix (VERY IMPORTANT)
+            SAFE_PREFIX=$(printf '%s\n' "$BRANCH_PREFIX" | sed 's/[][\/.^$*+?{}|()]/\\&/g')
 
-          echo "✅ PR title format is valid: $PR_TITLE"
+            if [[ ! "$PR_TITLE" =~ ^${SAFE_PREFIX}/ac-[0-9]+([[:space:]-].*)?$ ]]; then
+              echo "❌ Invalid PR title: $PR_TITLE"
+              echo "Expected formats:"
+              echo "  ${BRANCH_PREFIX}/AC-123"
+              echo "  ${BRANCH_PREFIX}/AC-123 description"
+              echo "  ${BRANCH_PREFIX}/AC-123-description"
+              exit 1
+            fi
+
+            echo "✅ PR title format is valid: $PR_TITLE"
+
 
