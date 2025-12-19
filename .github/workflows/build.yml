@@ -1,7 +1,7 @@
 name: Build
 
-on: ##on push branch 
-  push:
+on: ##on push branch  it will trigger 
+  push: 
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
