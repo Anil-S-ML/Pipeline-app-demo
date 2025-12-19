@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, edited]
     branches: [local-dev]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,22 +14,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-      - name: Validate branch & PR title
+      - name: Detect sync from main
+        id: check_sync
         run: |
-          BRANCH=$(echo "${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
-          TITLE=$(echo "${{ github.event.pull_request.title }}" | tr '[:upper:]' '[:lower:]')
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          if [[ "$SOURCE_BRANCH" == "main" ]]; then
+            echo "is_sync=true" >> $GITHUB_OUTPUT
+            echo "ℹ️ Detected sync from main → local-dev. Skipping validation."
+          else
+            echo "is_sync=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Regular PR detected. Running validation."
+          fi
 
-          if [[ ! "$BRANCH" =~ ^(feature|fix|chore|major-feature)/ac-[0-9]+ ]]; then
-            echo " Invalid branch name: $BRANCH"
+      - name: Validate branch name format
+        if: steps.check_sync.outputs.is_sync != 'true'
+        run: |
+          SOURCE_BRANCH=$(echo "${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
+
+          if [[ ! "$SOURCE_BRANCH" =~ ^(fix|feature|chore|major-feature)/ac-[0-9]+(-.*)?$ ]]; then
+            echo "❌ Invalid branch name: $SOURCE_BRANCH"
+            echo "Expected formats:"
+            echo "  feature/AC-123"
+            echo "  fix/AC-456-login-bug"
+            echo "  chore/AC-789-update-deps"
+            echo "  major-feature/AC-101-analytics"
             exit 1
           fi
 
-          PREFIX="${BRANCH%%/*}"
-          if [[ ! "$TITLE" =~ ^${PREFIX}/ac-[0-9]+ ]]; then
-            echo " PR title must start with ${PREFIX}/AC-XXX"
+          echo "✅ Branch name format is valid: $SOURCE_BRANCH"
+
+      - name: Validate PR title format
+        if: steps.check_sync.outputs.is_sync != 'true'
+        run: |
+          PR_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr '[:upper:]' '[:lower:]')
+          SOURCE_BRANCH=$(echo "${{ github.head_ref }}" | tr '[:upper:]' '[:lower:]')
+
+          BRANCH_PREFIX="${SOURCE_BRANCH%%/*}"
+
+          if [[ ! "$PR_TITLE" =~ ^${BRANCH_PREFIX}/ac-[0-9]+ ]]; then
+            echo "❌ Invalid PR title: $PR_TITLE"
+            echo "Expected format: ${BRANCH_PREFIX}/AC-XXX"
             exit 1
           fi
 
-          echo " PR validation passed"
+          echo "✅ PR title format is valid: $PR_TITLE"
