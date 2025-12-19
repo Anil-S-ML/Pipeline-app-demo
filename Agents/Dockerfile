@@ -10,3 +10,4 @@ ENV MONGO_INITDB_DATABASE=mydb
 EXPOSE 27017
 
 # No CMD needed because the base image already runs mongod
+##aded the version 
