@@ -55,7 +55,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ./Agents/agents-api
+          context: ./Agents
           push: true
           tags: |
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/agents-api:${{ inputs.version }}
