@@ -54,10 +54,18 @@ jobs:
 
           BRANCH_PREFIX="${SOURCE_BRANCH%%/*}"
 
-          if [[ ! "$PR_TITLE" =~ ^${BRANCH_PREFIX}/ac-[0-9]+ ]]; then
+          # Allow:
+          # prefix/AC-123
+          # prefix/AC-123 description
+          # prefix/AC-123-description
+          if [[ ! "$PR_TITLE" =~ ^${BRANCH_PREFIX}/ac-[0-9]+([[:space:]-].*)?$ ]]; then
             echo "❌ Invalid PR title: $PR_TITLE"
-            echo "Expected format: ${BRANCH_PREFIX}/AC-XXX"
+            echo "Expected formats:"
+            echo "  ${BRANCH_PREFIX}/AC-123"
+            echo "  ${BRANCH_PREFIX}/AC-123 description"
+            echo "  ${BRANCH_PREFIX}/AC-123-description"
             exit 1
           fi
 
           echo "✅ PR title format is valid: $PR_TITLE"
+
