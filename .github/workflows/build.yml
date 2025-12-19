@@ -2,9 +2,9 @@ name: Build
 
 on: ##on push branch  it will trigger  i think it is working
   push: 
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build:
