@@ -1,6 +1,6 @@
 name: Build
 
-on: ##on push branch
+on: ##on push branch 
   push:
     branches: [ "master" ]
   pull_request:
@@ -35,7 +35,7 @@ jobs:
 
     - name: Build and push Docker image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }} .
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/:${{ github.sha }} .
         docker tag ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/my-app:anything
         docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/my-app:anything
