@@ -1,0 +1,78 @@
+name: Development Build (Docker Hub Only)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [local-dev]
+
+jobs:
+  get-version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: local-dev
+          fetch-depth: 0
+
+      - name: Calculate semantic version
+        id: semver
+        run: |
+          PREFIX=$(echo "${{ github.head_ref }}" | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')
+
+          LAST_TAG=$(git tag -l --sort=-version:refname | head -n1)
+          [[ -z "$LAST_TAG" ]] && LAST_TAG="v0.0.0"
+
+          VERSION=${LAST_TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          case "$PREFIX" in
+            major-feature)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            feature)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            fix|chore)
+              PATCH=$((PATCH + 1))
+              ;;
+            *)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Calculated version: $NEW_VERSION"
+
+  build:
+    needs: get-version
+    uses: ./.github/workflows/docker-build-push.yml
+    with:
+      version: ${{ needs.get-version.outputs.version }}
+      checkout_ref: local-dev
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  summary:
+    needs: [get-version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## 🧪 Docker Hub Build Test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | \`${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ needs.get-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Agents API | \`${{ secrets.DOCKERHUB_USERNAME }}/agents-api:${{ needs.get-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | \`${{ secrets.DOCKERHUB_USERNAME }}/frontend:${{ needs.get-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Images successfully pushed to Docker Hub"
